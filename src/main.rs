@@ -3,6 +3,7 @@
     use std::time::Duration;
 
     fn main() {
+        /* 
         let mut iefp_coin = Blockchain::new();
         iefp_coin.add_block("Block 1 Data".to_owned());
 
@@ -11,5 +12,5 @@
 
         iefp_coin.add_block("Block 2 Data".to_owned());
         
-        println!("{:#?}", iefp_coin);
+        println!("{:#?}", iefp_coin);*/
     }

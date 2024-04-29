@@ -1,10 +1,13 @@
 use sha2::{Sha256, Digest};
-use std::fmt::Write;
+use std::{fmt::Write, sync::mpsc::Sender};
+
+
+use crate::Transaction;
 
 #[derive(Debug)]
 pub struct Block{
     timestamp:i64,
-    data:String,
+    data:Vec<Transaction>,
     prev_hash:String,
     pub hash:String,
     nonce: u64,
@@ -13,7 +16,7 @@ pub struct Block{
 // Block functions
 impl Block {
     //constructor
-    pub fn new(timestamp: i64, data: String, prev_hash: String) -> Self {
+    pub fn new(timestamp: i64, data: Vec<Transaction>, prev_hash: String) -> Self {
         let mut block = Block {
             timestamp,
             data,
@@ -29,7 +32,15 @@ impl Block {
     fn calculate_hash(block: &Block) -> String {
         let mut hasher = Sha256::new();
         hasher.update(block.timestamp.to_string().as_bytes());
-        hasher.update(&block.data.as_bytes());
+        
+        //iterar as transacoes e adicionar ao hash
+        for transaction in &block.data{
+            hasher.update(transaction.sender.as_bytes());
+            hasher.update(transaction.receiver.as_bytes());
+            hasher.update(transaction.amount.to_ne_bytes());
+            hasher.update(transaction.signature.as_bytes());
+        }
+
         hasher.update(&block.prev_hash.as_bytes());
         hasher.update(&block.nonce.to_string().as_bytes());
         let hash = hasher.finalize();
