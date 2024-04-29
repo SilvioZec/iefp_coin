@@ -1,0 +1,15 @@
+[package]
+name = "iefp_coin"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "blockchainlib"
+path = "src/lib.rs"
+
+[dependencies]
+chrono = "0.4"
+sha2 = "0.10.8"
+hex = "0.4.2"
