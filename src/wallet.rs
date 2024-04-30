@@ -48,8 +48,10 @@ impl Wallet {
         }
         for transaction in &blockchain.pool{
             for output in &transaction.output{
-                if output.receiver == self.public_key{
-                    self.utxo.push(output.clone());
+                if !output.spent{
+                    if output.receiver == self.public_key{
+                        self.utxo.push(output.clone());
+                    }
                 }
             }
         }
