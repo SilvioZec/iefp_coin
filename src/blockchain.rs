@@ -4,8 +4,8 @@ use chrono::Utc;
 // A struct for the Blockchain
 #[derive(Debug)]
 pub struct Blockchain {
-    chain: Vec<Block>,
-    pool: Vec<Transaction>,
+    pub chain: Vec<Block>,
+    pub pool: Vec<Transaction>,
 }
 // Implementing the Blockchain
 impl Blockchain {

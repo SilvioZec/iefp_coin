@@ -7,7 +7,7 @@ use crate::{transaction, Transaction};
 #[derive(Debug)]
 pub struct Block{
     timestamp:i64,
-    data:Vec<Transaction>,
+    pub data:Vec<Transaction>,
     prev_hash:String,
     pub hash:String,
     nonce: u64,

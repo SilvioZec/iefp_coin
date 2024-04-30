@@ -6,6 +6,7 @@ pub struct Output {
     pub receiver: String,
     pub amount: u64,
     pub signature: String,
+    pub spent: bool,
 }
 
 use std::str::FromStr;
@@ -13,12 +14,13 @@ use std::str::FromStr;
 use secp256k1::{Secp256k1, Message, SecretKey, PublicKey, Signature};
 
 impl Output {
-    pub fn new(sender_pub_key : &PublicKey, receiver_pub_key : &PublicKey, amount : u64, secret_key: &SecretKey) -> Self {
+    pub fn new(sender_pub_key : String, receiver_pub_key : String, amount : u64, secret_key: &SecretKey) -> Self {
         let mut output = Output {
-            sender : sender_pub_key.to_string(),
-            receiver : receiver_pub_key.to_string(),
+            sender : sender_pub_key,
+            receiver : receiver_pub_key,
             amount : amount,
             signature : String::new(),
+            spent: false,
         };
         output.sign(secret_key);
         output
