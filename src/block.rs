@@ -2,7 +2,7 @@ use sha2::{Sha256, Digest};
 use std::{fmt::Write, sync::mpsc::Sender};
 
 
-use crate::Transaction;
+use crate::{transaction, Transaction};
 
 #[derive(Debug)]
 pub struct Block{
@@ -33,12 +33,15 @@ impl Block {
         let mut hasher = Sha256::new();
         hasher.update(block.timestamp.to_string().as_bytes());
         
-        //iterar as transacoes e adicionar ao hash
+        //iterate through transactions
         for transaction in &block.data{
-            hasher.update(transaction.sender.as_bytes());
-            hasher.update(transaction.receiver.as_bytes());
-            hasher.update(transaction.amount.to_ne_bytes());
-            hasher.update(transaction.signature.as_bytes());
+            //iterate through outputs and add to hasher
+            for output in &transaction.output{
+                hasher.update(output.sender.as_bytes());
+                hasher.update(output.receiver.as_bytes());
+                hasher.update(output.amount.to_ne_bytes());
+                hasher.update(output.signature.as_bytes());
+            }
         }
 
         hasher.update(&block.prev_hash.as_bytes());
