@@ -8,3 +8,5 @@ pub mod transaction;
 pub use crate::transaction::Transaction;
 pub mod output;
 pub use crate::output::Output;
+pub mod wallet;
+pub use crate::wallet::Wallet;

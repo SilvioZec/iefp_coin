@@ -1,6 +1,6 @@
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Output {
     pub sender: String,
     pub receiver: String,
@@ -26,6 +26,7 @@ impl Output {
         output
     }
 
+    //assina a saida com a chave privada do remetente
     fn sign(&mut self, secret_key: &SecretKey) {
         let context = Secp256k1::new();
         let message = self.create_message();
@@ -33,6 +34,8 @@ impl Output {
         
         self.signature = signature.to_string();
     }
+
+    //cria uma mensagem em bytes para ser codificada (assinada) pela chave privada
     fn create_message(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend(self.sender.as_bytes());
@@ -44,11 +47,13 @@ impl Output {
 
 
 impl Output {
-    fn verify(&self, sender_pub_key : &PublicKey) -> bool{
+    //verifica se a saida é valida, confirmando a assinatura e o valor
+    pub fn verify(&self) -> bool{
         let context = Secp256k1::new();
         let message = self.create_message();
         let signature = Signature::from_str(&self.signature).unwrap();
+        let sender_pub_key = PublicKey::from_str(&self.sender).unwrap();
 
-        context.verify(&Message::from_slice(&message).unwrap(), &signature, sender_pub_key).is_ok()
+        context.verify(&Message::from_slice(&message).unwrap(), &signature, &sender_pub_key).is_ok()
     }
 }

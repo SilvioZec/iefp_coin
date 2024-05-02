@@ -4,31 +4,40 @@ use super::*;
 pub struct Transaction {
     pub input: Vec<Output>,
     pub output: Vec<Output>,
-    pub value: u64,
 }
 
 impl Transaction {
-    fn new(input: Vec<Output>, output: Vec<Output>) -> Self{
-        let value = Self::calculate_value(&input, &output);
+    pub fn new(input: Vec<Output>, output: Vec<Output>) -> Self{
         Transaction {
             input,
             output,
-            value, 
         }
     }
 
-    fn calculate_value (input: &Vec<Output>, output: &Vec<Output>) -> u64{
-        let mut input_total : u64 = 0;
-        for individual_input in input{
-            input_total += individual_input.amount;
-        }
+    //utiliza a funcao de validacao em output para individualmente validar cada saida. caso alguma esteja incorreta, invalida toda a transacao
+    pub fn validate_transaction (&self) -> bool {
+        let mut invalid = false;
+
+
+        let mut input_total: u64 = 0;
         let mut output_total: u64 = 0;
-        for individual_output in output{
+
+        //itera sobre as saidas verificando sua assinatura E calculando o valor total
+        for individual_input in &self.input{
+            input_total += individual_input.amount;
+            if !Output::verify(&individual_input){
+                invalid = true;
+            }
+        }
+        for individual_output in &self.output{
             output_total += individual_output.amount;
+            if !Output::verify(&individual_output){
+                invalid = true;
+            }
         }
-        if input_total == output_total{input_total}
-        else {
-            0
+        if input_total != output_total {
+            invalid = true;
         }
+        invalid
     }
 }

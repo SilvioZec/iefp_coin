@@ -1,5 +1,5 @@
 use super::*;
-use secp256k1::{Secp256k1, Message, SecretKey, PublicKey, Signature};
+use secp256k1::{rand, Secp256k1, SecretKey};
 
 #[derive(Debug)]
 pub struct Wallet {
@@ -11,29 +11,32 @@ pub struct Wallet {
 
 impl Wallet {
     fn new() -> Self {
-        let private_key = SecretKey::random(&mut rand::thread_rng());
-        
-        let public_key = secp256k1::PublicKey::from_secret_key(&secp, &private_key);
+        //cria um par de chaves elipticas e atribui a carteira
+        let secp = Secp256k1::new();
+        let secret_key = SecretKey::new(&mut rand::thread_rng());
+        let public_key = PublicKey::from_secret_key(&secp, &secret_key);
         let public_key_str = hex::encode(public_key.serialize_uncompressed());
 
         Wallet {
-            private_key: SecretKey,
+            private_key: secret_key,
             public_key: public_key_str,
             balance: 0,
             utxo: Vec::new(),
         }
     }
 
+    //calcula o saldo da carteira com base nas utxo (saidas nao gastas)
     fn calculate_balance(&self) -> u64{
         let mut balance: u64 = 0;
-        for output in self.utxo{
-            if output.address == self.public_key {
+        for output in &self.utxo{
+            if output.receiver == self.public_key {
                 balance += output.amount;
             }
         }
         balance
     }
 
+    // Busca todas as saidas nao gastas destinadas a essa carteira e calcula o saldo
     fn fetch_utxo(&mut self, blockchain: &Blockchain){
         for block in &blockchain.chain{
             for transaction in &block.data{
@@ -55,19 +58,23 @@ impl Wallet {
                 }
             }
         }
-        calculate_balance();
+        self.calculate_balance();
     }
 
-    fn make_transaction(&mut self, receiver: String, amount: u64) -> Option<Transaction>{
-        self.fetch_utxo();
+    //cria uma transacao
+    fn make_transaction(&mut self, receiver: String, amount: u64, blockchain: &Blockchain) -> Option<Transaction>{
+        self.fetch_utxo(blockchain);
 
         if self.balance < amount {
             return None; // impossivel fazer a transacao sem fundos
         }
 
+        //calcular o restante e criar dois outputs, um para si mesmo e outro para o destinatario
         let remain = self.balance - amount;
         let first_output = Output::new(self.public_key.clone(), receiver, amount, &self.private_key);
         let remain_output = Output::new(self.public_key.clone(), self.public_key.clone(), remain, &self.private_key);
+
+        //criar e adicionar ao vetor
         let mut outputs = Vec::new();
         outputs.push(first_output);
         outputs.push(remain_output);

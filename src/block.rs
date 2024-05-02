@@ -1,8 +1,12 @@
+use chrono::Utc;
 use sha2::{Sha256, Digest};
-use std::{fmt::Write, sync::mpsc::Sender};
+use std::{fmt::{Write, DebugStruct}, sync::mpsc::Sender};
+use super::*;
 
+const DIFFICULTY: &str = "0000";
+const MIN_TRANSACTIONS : usize = 10;
 
-use crate::{transaction, Transaction};
+// Block struct
 
 #[derive(Debug)]
 pub struct Block{
@@ -16,9 +20,9 @@ pub struct Block{
 // Block functions
 impl Block {
     //constructor
-    pub fn new(timestamp: i64, data: Vec<Transaction>, prev_hash: String) -> Self {
+    pub fn new(data: Vec<Transaction>, prev_hash: String) -> Self {
         let mut block = Block {
-            timestamp,
+            timestamp: 0,
             data,
             prev_hash,
             hash: String::new(),
@@ -28,14 +32,12 @@ impl Block {
         block
     }
 
-    //hash creator
+    //cria a hash de um bloco
     fn calculate_hash(block: &Block) -> String {
         let mut hasher = Sha256::new();
-        hasher.update(block.timestamp.to_string().as_bytes());
-        
-        //iterate through transactions
+        //itera sobre as transacoes
         for transaction in &block.data{
-            //iterate through outputs and add to hasher
+            //iterate sobre as saidas e as converte em bytes
             for output in &transaction.output{
                 hasher.update(output.sender.as_bytes());
                 hasher.update(output.receiver.as_bytes());
@@ -46,8 +48,10 @@ impl Block {
 
         hasher.update(&block.prev_hash.as_bytes());
         hasher.update(&block.nonce.to_string().as_bytes());
+        //calcular a hash final de 256 bytes
         let hash = hasher.finalize();
         let mut hash_str = String::new();
+        //paracada byte da hash, converte para hexadecimal e adiciona a string
         for byte in hash {
             write!(&mut hash_str, "{:02x}", byte).expect("Unable to write");
         }
@@ -56,20 +60,47 @@ impl Block {
 
     //block miner
     pub fn mine (&mut self) {
+        //verificar se existe o minimo de transacoes necessarias
+        if self.data.len() <= MIN_TRANSACTIONS{
+            return;
+        }
+
         //aumenta o nonce ate satisfazer a funcao de checar dificuldade
         for nonce_attempt in 0..(u64::max_value()) {
             self.nonce = nonce_attempt;
-            let hash= Block::calculate_hash(&self);
-            if Self::check_difficulty(&hash) {
+            let hash= calculate_hash(&self);
+            if check_difficulty(&hash) {
                 self.hash = hash;
+                self.timestamp = Utc::now().timestamp();
                 return;
             }
         }
     }
     
+    pub fn validate_block (block: &Block) -> bool {
+        //cria um hash para o bloco e compara com o hash atribuido
+        let hash = Block::calculate_hash(block);
+        if hash != block.hash {
+            return false;
+        }
+
+        //verifica se o hash satisfaz a dificuldade
+        if  !Self::check_difficulty(&block.hash){
+            return false;
+        }
+        
+        //valida as transacoes
+        for individual_transaction in &block.data{
+            if !Transaction::validate_transaction(individual_transaction){
+                return false;
+            }
+        }
+        true
+    }
+
     pub fn check_difficulty(hash: &String) -> bool {
 
-    hash.starts_with("0000") //mais facil de visualizar porem um desempenho menor
+    hash.starts_with(DIFFICULTY) //mais facil de visualizar porem um desempenho menor
 
     /* 
         // Converte a string hexadecimal para bytes
