@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use super::*;
 use chrono::Utc;
+const TIMESTAMP_TOLERANCE : i64 = 600; //tolerancia em segundos
 
 // A struct for the Blockchain
 #[derive(Debug)]
@@ -37,6 +38,11 @@ impl Blockchain {
         Ok(true)
     }
 
+    //rotina para verificar integridade do hashmap
+    fn check_unspent_map_integrity() {
+        //percorrer blockchain e verificar hashmap
+    }
+
     //tornar todos os outputs utilizados como input em uma transacao em gastos
     fn spend_inputs(transaction: &Transaction) -> bool{
         let mut all_unspent_outputs: Vec<&mut Output> = vec![];
@@ -47,5 +53,21 @@ impl Blockchain {
         let prev_hash = self.chain.last().unwrap().hash.clone();
         let new_block = Block::new(data, prev_hash);
         self.chain.push(new_block);
+    }
+
+    //validar bloco
+    fn validate_block (&block &Block) -> bool {
+        //verificar a prev_hash
+        if block.prev_hash != self.chain.last().unwrap().hash {
+            return false;
+        }
+        //verificar o bloco atraves da funcao da classe
+        if !Block::validate_block(block){
+            return false;
+        }
+        //verificar o timestamp
+        if block.timestamp > Utc::now().timestamp() || block.timestamp < Utc::now().timestamp() - TIMESTAMP_TOLERANCE {
+            return false;
+        }
     }
 }
