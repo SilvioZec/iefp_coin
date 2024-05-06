@@ -4,7 +4,7 @@ use std::{fmt::{Write, DebugStruct}, sync::mpsc::Sender};
 use super::*;
 
 const DIFFICULTY: &str = "0000";
-const MIN_TRANSACTIONS : usize = 10;
+const MIN_TRANSACTIONS : usize = 5;
 
 // Block struct
 
@@ -28,12 +28,11 @@ impl Block {
             hash: String::new(),
             nonce: 0,
         };
-        block.mine();
         block
     }
 
     //cria a hash de um bloco
-    fn calculate_hash(block: &Block) -> String {
+    pub fn calculate_hash(block: &Block) -> String {
         let mut hasher = Sha256::new();
         //itera sobre as transacoes
         for transaction in &block.data{
@@ -59,9 +58,10 @@ impl Block {
     }
 
     //block miner
-    pub fn mine (&mut self) {
+    pub fn mine (&mut self, pool: Vec<Transaction>) {
+        self.data = pool;
         //verificar se existe o minimo de transacoes necessarias
-        if self.data.len() <= MIN_TRANSACTIONS{
+        if self.data.len() < MIN_TRANSACTIONS{
             return;
         }
 
