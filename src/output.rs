@@ -30,7 +30,7 @@ impl Output {
     fn sign(&mut self, secret_key: &SecretKey) {
         let context = Secp256k1::new();
         let message = self.create_message();
-        let signature = context.sign(&Message::from_slice(&message).unwrap(), secret_key);
+        let signature = context.sign(&Message::from_digest_slice(&message).unwrap(), secret_key);
         
         self.signature = signature.to_string();
     }

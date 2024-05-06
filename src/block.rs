@@ -10,9 +10,9 @@ const MIN_TRANSACTIONS : usize = 5;
 
 #[derive(Debug)]
 pub struct Block{
-    timestamp:i64,
+    pub timestamp:i64,
     pub data:Vec<Transaction>,
-    prev_hash:String,
+    pub prev_hash:String,
     pub hash:String,
     nonce: u64,
 }
@@ -32,7 +32,7 @@ impl Block {
     }
 
     //cria a hash de um bloco
-    pub fn calculate_hash(block: &Block) -> String {
+    fn calculate_hash(block: &Block) -> String {
         let mut hasher = Sha256::new();
         //itera sobre as transacoes
         for transaction in &block.data{
@@ -68,7 +68,7 @@ impl Block {
         //aumenta o nonce ate satisfazer a funcao de checar dificuldade
         for nonce_attempt in 0..(u64::max_value()) {
             self.nonce = nonce_attempt;
-            let hash= calculate_hash(&self);
+            let hash= self.calculate_hash(&self);
             if check_difficulty(&hash) {
                 self.hash = hash;
                 self.timestamp = Utc::now().timestamp();
