@@ -1,4 +1,4 @@
-
+use std::cell::Cell;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Output {
@@ -6,12 +6,11 @@ pub struct Output {
     pub receiver: String,
     pub amount: u64,
     pub signature: String,
-    pub spent: bool,
+    pub spent: Cell<bool>,
 }
 
 use std::str::FromStr;
-
-use secp256k1::{Secp256k1, Message, SecretKey, PublicKey, Signature};
+use secp256k1::{Secp256k1, Message, SecretKey, PublicKey, ecdsa::Signature};
 
 impl Output {
     pub fn new(sender_pub_key : String, receiver_pub_key : String, amount : u64, secret_key: &SecretKey) -> Self {
@@ -20,7 +19,7 @@ impl Output {
             receiver : receiver_pub_key,
             amount : amount,
             signature : String::new(),
-            spent: false,
+            spent: Cell::new(false),
         };
         output.sign(secret_key);
         output
@@ -28,9 +27,9 @@ impl Output {
 
     //assina a saida com a chave privada do remetente
     fn sign(&mut self, secret_key: &SecretKey) {
-        let context = Secp256k1::new();
+        let secp = Secp256k1::new();
         let message = self.create_message();
-        let signature = context.sign(&Message::from_digest_slice(&message).unwrap(), secret_key);
+        let signature = secp.sign_ecdsa(&Message::from_digest_slice(&message).unwrap(), secret_key);
         
         self.signature = signature.to_string();
     }
@@ -49,11 +48,14 @@ impl Output {
 impl Output {
     //verifica se a saida é valida, confirmando a assinatura e o valor
     pub fn verify(&self) -> bool{
-        let context = Secp256k1::new();
+        if self.sender == "System" {
+            return true;
+        }
+        let secp = Secp256k1::new();
         let message = self.create_message();
         let signature = Signature::from_str(&self.signature).unwrap();
         let sender_pub_key = PublicKey::from_str(&self.sender).unwrap();
 
-        context.verify(&Message::from_slice(&message).unwrap(), &signature, &sender_pub_key).is_ok()
+        secp.verify_ecdsa(&Message::from_digest_slice(&message).unwrap(), &signature, &sender_pub_key).is_ok()
     }
 }

@@ -1,5 +1,6 @@
 use super::*;
-use secp256k1::{rand, Secp256k1, SecretKey};
+use secp256k1::{Secp256k1, SecretKey, PublicKey};
+use rand::random;
 
 #[derive(Debug)]
 pub struct Wallet {
@@ -13,13 +14,12 @@ impl Wallet {
     fn new() -> Self {
         //cria um par de chaves elipticas e atribui a carteira
         let secp = Secp256k1::new();
-        let secret_key = SecretKey::new(&mut rand::thread_rng());
-        let public_key = PublicKey::from_secret_key(&secp, &secret_key);
-        let public_key_str = hex::encode(public_key.serialize_uncompressed());
+        let secret_key = SecretKey::from_slice(&random::<[u8; 32]>()).unwrap();
+        let public_key = PublicKey::from_secret_key(&secp, &secret_key).to_string();
 
         Wallet {
             private_key: secret_key,
-            public_key: public_key_str,
+            public_key: public_key,
             balance: 0,
             utxo: Vec::new(),
         }
@@ -40,25 +40,21 @@ impl Wallet {
     fn fetch_utxo(&mut self, blockchain: &Blockchain){
         for block in &blockchain.chain{
             for transaction in &block.data{
-                for output in &transaction.output{
-                    if !output.spent{
-                        if output.receiver == self.public_key{
-                            self.utxo.push(output.clone());
-                        }
+                for output in &transaction.outputs{
+                    if !output.spent.get() && output.receiver == self.public_key{
+                        self.utxo.push(output.clone());    
                     }
                 }
             }
         }
         for transaction in &blockchain.pool{
-            for output in &transaction.output{
-                if !output.spent{
-                    if output.receiver == self.public_key{
-                        self.utxo.push(output.clone());
-                    }
+            for output in &transaction.outputs{
+                if !output.spent.get() && output.receiver == self.public_key{
+                    self.utxo.push(output.clone());    
                 }
             }
         }
-        self.calculate_balance();
+        self.balance = self.calculate_balance();
     }
 
     //cria uma transacao

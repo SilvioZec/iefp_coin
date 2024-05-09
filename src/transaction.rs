@@ -1,37 +1,29 @@
 use super::*;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Transaction {
-    pub input: Vec<Output>,
-    pub output: Vec<Output>,
+    pub inputs: Vec<Output>,
+    pub outputs: Vec<Output>,
 }
 
 impl Transaction {
-    pub fn new(input: Vec<Output>, output: Vec<Output>) -> Self{
+    pub fn new(inputs: Vec<Output>, outputs: Vec<Output>) -> Self {
         Transaction {
-            input,
-            output,
+            inputs,
+            outputs,
         }
     }
 
-    //utiliza a funcao de validacao em output para individualmente validar cada saida. caso alguma esteja incorreta, invalida toda a transacao
-    pub fn validate_transaction (&self) -> bool {
+    // Utilizes the validation function on Output to individually validate each output. If any output is incorrect,
+    // invalidates the entire transaction
+    pub fn validate_transaction(&self) -> bool {
         let mut invalid = false;
 
+        let input_total: u64 = self.inputs.iter().map(|o| o.amount as u64).sum();
+        let output_total: u64 = self.outputs.iter().map(|o| o.amount as u64).sum();
 
-        let mut input_total: u64 = 0;
-        let mut output_total: u64 = 0;
-
-        //itera sobre as saidas verificando sua assinatura E calculando o valor total
-        for individual_input in &self.input{
-            input_total += individual_input.amount;
-            if !Output::verify(&individual_input){
-                invalid = true;
-            }
-        }
-        for individual_output in &self.output{
-            output_total += individual_output.amount;
-            if !Output::verify(&individual_output){
+        for individual_output in &self.outputs {
+            if !Output::verify(&individual_output) {
                 invalid = true;
             }
         }
