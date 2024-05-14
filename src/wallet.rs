@@ -38,6 +38,7 @@ impl Wallet {
 
     // Busca todas as saidas nao gastas destinadas a essa carteira e calcula o saldo
     pub fn fetch_utxo(&mut self, blockchain: &Blockchain){
+        self.utxo.clear();
         for block in &blockchain.chain{
             for transaction in &block.data{
                 for output in &transaction.outputs{

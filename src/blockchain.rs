@@ -18,6 +18,7 @@ impl Blockchain {
         let genesis_output = vec![Output::new(String::from("System"), wallet_address.clone(), 1000, private_key)];
         let genesis_transaction = Transaction::new(genesis_input, genesis_output);
         let genesis_block = Block::new(vec![genesis_transaction], String::new());
+        genesis_block.calculate_hash();
         Blockchain {
             chain: vec![genesis_block],
             pool: Vec::new(),

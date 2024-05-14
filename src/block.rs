@@ -4,11 +4,11 @@ use std::fmt::Write;
 use super::*;
 
 const DIFFICULTY: &str = "000";
-const MIN_TRANSACTIONS : usize = 5;
+const MIN_TRANSACTIONS : usize = 1;
 
 // Block struct
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Block{
     pub timestamp:i64,
     pub data:Vec<Transaction>,
@@ -32,7 +32,7 @@ impl Block {
     }
 
     //cria a hash de um bloco
-    fn calculate_hash(&self) -> String {
+    pub fn calculate_hash(&self) -> String {
         let mut hasher = Sha256::new();
         //itera sobre as transacoes
         for transaction in &self.data{

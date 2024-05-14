@@ -57,10 +57,14 @@ impl Output {
             return true;
         }
         let secp = Secp256k1::new();
-        let message = self.create_message();
+        let byte_array = self.create_message();
+        let mut hasher = Sha256::new();
+        hasher.update(byte_array);
+        let digest = hasher.finalize();
+        let message = Message::from_digest(digest.try_into().unwrap());
         let signature = Signature::from_str(&self.signature).unwrap();
         let sender_pub_key = PublicKey::from_str(&self.sender).unwrap();
 
-        secp.verify_ecdsa(&Message::from_digest_slice(&message).unwrap(), &signature, &sender_pub_key).is_ok()
+        secp.verify_ecdsa(&message, &signature, &sender_pub_key).is_ok()
     }
 }

@@ -30,6 +30,6 @@ impl Transaction {
         if input_total != output_total {
             invalid = true;
         }
-        invalid
+        !invalid
     }
 }
