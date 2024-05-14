@@ -4,14 +4,14 @@ use rand::random;
 
 #[derive(Debug)]
 pub struct Wallet {
-    private_key: SecretKey,
+    pub private_key: SecretKey,
     pub public_key: String,
-    balance: u64,
+    pub balance: u64,
     utxo: Vec<Output>,
 }
 
 impl Wallet {
-    fn new() -> Self {
+    pub fn new() -> Self {
         //cria um par de chaves elipticas e atribui a carteira
         let secp = Secp256k1::new();
         let secret_key = SecretKey::from_slice(&random::<[u8; 32]>()).unwrap();
@@ -37,7 +37,7 @@ impl Wallet {
     }
 
     // Busca todas as saidas nao gastas destinadas a essa carteira e calcula o saldo
-    fn fetch_utxo(&mut self, blockchain: &Blockchain){
+    pub fn fetch_utxo(&mut self, blockchain: &Blockchain){
         for block in &blockchain.chain{
             for transaction in &block.data{
                 for output in &transaction.outputs{
@@ -58,7 +58,7 @@ impl Wallet {
     }
 
     //cria uma transacao
-    fn make_transaction(&mut self, receiver: String, amount: u64, blockchain: &Blockchain) -> Option<Transaction>{
+    pub fn make_transaction(&mut self, receiver: String, amount: u64, blockchain: &Blockchain) -> Option<Transaction>{
         self.fetch_utxo(blockchain);
 
         if self.balance < amount {

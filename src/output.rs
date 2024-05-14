@@ -11,6 +11,7 @@ pub struct Output {
 
 use std::str::FromStr;
 use secp256k1::{Secp256k1, Message, SecretKey, PublicKey, ecdsa::Signature};
+use sha2::{Sha256, Digest};
 
 impl Output {
     pub fn new(sender_pub_key : String, receiver_pub_key : String, amount : u64, secret_key: &SecretKey) -> Self {
@@ -28,8 +29,12 @@ impl Output {
     //assina a saida com a chave privada do remetente
     fn sign(&mut self, secret_key: &SecretKey) {
         let secp = Secp256k1::new();
-        let message = self.create_message();
-        let signature = secp.sign_ecdsa(&Message::from_digest_slice(&message).unwrap(), secret_key);
+        let byte_array = self.create_message();
+        let mut hasher = Sha256::new();
+        hasher.update(byte_array);
+        let digest = hasher.finalize();
+        let message = Message::from_digest(digest.try_into().unwrap());
+        let signature = secp.sign_ecdsa(&message, secret_key);
         
         self.signature = signature.to_string();
     }
@@ -39,7 +44,7 @@ impl Output {
         let mut bytes = Vec::new();
         bytes.extend(self.sender.as_bytes());
         bytes.extend(self.receiver.as_bytes());
-        bytes.extend(&self.amount.to_le_bytes());
+        bytes.extend(self.amount.to_le_bytes());
         bytes
     }
 }

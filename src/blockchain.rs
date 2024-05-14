@@ -1,6 +1,5 @@
 use std::cell::Cell;
-use std::rc::Rc;
-use std::collections::HashMap;
+use secp256k1::SecretKey;
 use super::*;
 use chrono::Utc;
 const TIMESTAMP_TOLERANCE : i64 = 600; //tolerancia em segundos
@@ -11,16 +10,17 @@ const REWARD: u64 = 1000; //numero de moedas de recompensa
 pub struct Blockchain {
     pub chain: Vec<Block>,
     pub pool: Vec<Transaction>,
-    unspent_outputs: HashMap<String, Vec<Rc<Output>>>,
 }
 
 impl Blockchain {
-    pub fn new() -> Self {
-        let genesis_block = Block::new(Vec::new(), String::new());
+    pub fn new(wallet_address: String, private_key: &SecretKey) -> Self {
+        let genesis_input = vec![Output::new(String::from("System"), wallet_address.clone(), 1000, private_key)];
+        let genesis_output = vec![Output::new(String::from("System"), wallet_address.clone(), 1000, private_key)];
+        let genesis_transaction = Transaction::new(genesis_input, genesis_output);
+        let genesis_block = Block::new(vec![genesis_transaction], String::new());
         Blockchain {
             chain: vec![genesis_block],
             pool: Vec::new(),
-            unspent_outputs: HashMap::new(),
         }
     }
 
@@ -33,71 +33,35 @@ impl Blockchain {
         }
 
         // Gastar os outputs utilizados na transacao
-        if self.spend_inputs(&transaction){
-            return Err(String::from("Could not spend the inputs"));
+        for input in &transaction.inputs{
+            if !self.spend_input(input){
+                    return Err(String::from("Could not spend the inputs"));
+                }
         }
+        
 
         //adicionar a pool
         self.pool.push(transaction);
 
-        //adicionar outputs ao hashmap
-        // Iterate over the outputs in the last transaction added to the pool
-        let last_idx = self.pool.len() - 1;
-        for output in self.pool[last_idx].outputs.iter() {
-            self.add_to_hashmap(Rc::new(*output));
-        }
-
         Ok(true)
     }
 
-    //adiciona output ao hashmap
-    fn add_to_hashmap(&mut self, output: Rc<Output>) {
-        if output.spent.get() {
-            return;
-        }
-    
-        let wallet_address = output.receiver.clone();
-
-        match self.unspent_outputs.entry(wallet_address){
-            std::collections::hash_map::Entry::Occupied(mut entry) => {
-                //carteira existe, adicionar ao vetor
-                entry.get_mut().push(output.clone());
-            }
-            std::collections::hash_map::Entry::Vacant(entry) => {
-                let vec = vec![output.clone()];
-                entry.insert(vec);
-            }
-        }
-    }
-
-    //Rotina para verificar a integridade do hashmap
-    fn check_unspent_map_integrity(&mut self) -> Result<(), &'static str> {
-        //verificar se todos os outputs do mapa nao estao gastos
-        for (_, outputs) in &self.unspent_outputs {
-            for output in outputs {
-                if output.spent.get() {
-                    return Err("Found spent outputs on hashmap")
-                }
-            }
-        }
-        Ok(())
-    }
 
     //tornar todos os outputs utilizados como input em uma transacao em gastos
-    pub fn spend_inputs(&mut self, transaction: &Transaction) -> bool {
-        for input in &transaction.inputs {
-            if let Some(outputs) = self.unspent_outputs.get_mut(&input.receiver) {
-                if let Some(output) = outputs.iter_mut().find(|o| *o.receiver == input.receiver && !o.spent.get()) {
-                    output.spent.set(true);
-                } else {
-                    return false; // Input nao encontrado ou ja gasto
+    pub fn spend_input(&mut self, input: &Output) -> bool {
+        for block in &self.chain{
+            for transaction in &block.data{
+                for output in &transaction.outputs {
+                    if output.signature == input.signature && !output.spent.get(){
+                        output.spent.set(true);
+                        return true;
+                    }
                 }
-            } else {
-                return false; // input nao encontrado no hashmap
             }
         }
-        true
+        false
     }
+
     //adicionar bloco a blockchain ============= MODIFICAR
     pub fn add_block(&mut self, mut mined_block: Block, miner_wallet: String) -> Result<(), &'static str> {
         //extrair hash do ultimo bloco
