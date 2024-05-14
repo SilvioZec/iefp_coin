@@ -8,10 +8,11 @@ pub struct Wallet {
     pub public_key: String,
     pub balance: u64,
     utxo: Vec<Output>,
+    pub password: String,
 }
 
 impl Wallet {
-    pub fn new() -> Self {
+    pub fn new(password: String) -> Self {
         //cria um par de chaves elipticas e atribui a carteira
         let secp = Secp256k1::new();
         let secret_key = SecretKey::from_slice(&random::<[u8; 32]>()).unwrap();
@@ -22,6 +23,7 @@ impl Wallet {
             public_key: public_key,
             balance: 0,
             utxo: Vec::new(),
+            password,
         }
     }
 
